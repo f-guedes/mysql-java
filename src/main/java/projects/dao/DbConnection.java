@@ -11,18 +11,20 @@ public class DbConnection {
   private static final String SCHEMA = "projects";
   private static final String HOST = "localhost";
   private static final int PORT = 3306;
-  
+
   public static Connection getConnection() {
-    String uri = String.format("jdbc:mysql://%s:%d/%s", HOST, PORT, SCHEMA);
-    
+    String url =
+        String.format("jdbc:mysql://%s:%d/%s?user=%s&password=%s&useSSL=false", HOST, PORT,
+        SCHEMA, USERNAME, PASSWORD);
+
+    System.out.println("Establishing connection with " + url);
+
     try {
-      Connection conn = DriverManager.getConnection(uri, USERNAME, PASSWORD);
-      System.out.println("You're connected to " + uri);
+      Connection conn = DriverManager.getConnection(url);
+      System.out.println("Connection successful!");
       return conn;
     } catch (SQLException e) {
-      String message = "Connection failed at " + uri;
-      System.out.println(message);
-      throw new DbException(message);
+      throw new DbException(e);
     }
   }
 
