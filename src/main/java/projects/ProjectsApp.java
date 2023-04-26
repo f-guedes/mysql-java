@@ -17,7 +17,9 @@ public class ProjectsApp {
   private List<String> operations = List.of(
         "1) Add a project",
         "2) List projects",
-        "3) Select a project"
+        "3) Select a project",
+        "4) Update project details",
+        "5) Delete a project"
   );
   // @formatter:on   
 
@@ -60,6 +62,14 @@ public class ProjectsApp {
             selectProject();
             break;
 
+          case 4:
+            updateProjectDetails();
+            break;
+
+          case 5:
+            deleteProject();
+            break;
+
           default:
             System.out.println("\n" + selection + " is not a valid selection. Try again.");
         }
@@ -68,7 +78,6 @@ public class ProjectsApp {
       }
     }
   }
-
 
   /**
    * Used to print a prompt to the user in the console to make a selection and calls the
@@ -85,14 +94,15 @@ public class ProjectsApp {
 
 
   /**
-   * This method prints available selections in the menu or prints information about a project that was previously selected.
+   * This method prints available selections in the menu or prints information about a project that
+   * was previously selected.
    */
   private void printOperations() {
     System.out.println("\nThese are the available selections. Press the Enter key to quit:");
     for (String line : operations) {
       System.out.println("  " + line);
     }
-    
+
     if (Objects.isNull(curProject)) {
       System.out.println("\nYou are not working with a project.");
     } else {
@@ -145,6 +155,67 @@ public class ProjectsApp {
 
 
   /**
+   * Collects user inputs from the console to be used to update a row in the database for a specific
+   * project. It does that by creating a project object and pupulating it with either user inputs
+   * (if not null) or existing data from the database, then calls on the
+   * projectService.modifyProjectDetails() to pass on those changes to the service layer. Then it
+   * resets the curProject object to reflect those changes.
+   * 
+   */
+  private void updateProjectDetails() {
+    if (Objects.isNull(curProject)) {
+      System.out.println("\n\nPlease select a project first.\n");
+      return;
+    }
+    String projectName =
+        getStringInput("Enter the project name [ " + curProject.getProjectName() + " ]");
+    BigDecimal estimatedHours =
+        getDecimalInput("Enter the estimated hours [" + curProject.getEstimatedHours() + "]");
+    BigDecimal actualHours =
+        getDecimalInput("Enter the actual hours [" + curProject.getActualHours() + "]");
+    Integer difficulty =
+        getIntInput("Enter the project difficulty [" + curProject.getDifficulty() + "]");
+    String notes = getStringInput("Enter the project notes [ " + curProject.getNotes() + " ]");
+
+    Project project = new Project();
+
+    project.setProjectName(Objects.isNull(projectName) ? curProject.getProjectName() : projectName);
+    project.setEstimatedHours(
+        Objects.isNull(estimatedHours) ? curProject.getEstimatedHours() : estimatedHours);
+    project.setActualHours(Objects.isNull(actualHours) ? curProject.getActualHours() : actualHours);
+    project.setDifficulty(Objects.isNull(difficulty) ? curProject.getDifficulty() : difficulty);
+    project.setNotes(Objects.isNull(notes) ? curProject.getNotes() : notes);
+    project.setProjectId(curProject.getProjectId());
+
+    projectService.modifyProjectDetails(project);
+
+    curProject = projectService.fetchProjectById(curProject.getProjectId());
+
+  }
+
+  /**
+   * Lists all projects and allows the user to enter the id of the project to be deleted from the
+   * database. Then checks if the project Id selected for deletion by the user matches the one in
+   * curProject. If it does, it sets curProject to null, effectively deselecting it.
+   * 
+   */
+  private void deleteProject() {
+    listProjects();
+
+    Integer projectId = getIntInput("Enter the project ID of the project to be deleted");
+
+    projectService.deleteProject(projectId);
+
+    System.out.println(
+        "Project with ID= " + projectId + " has been successfully deleted from the database.");
+
+    if (Objects.nonNull(curProject) && curProject.getProjectId().equals(projectId)) {
+      curProject = null;
+    }
+  }
+
+
+  /**
    * Calls listProjects() to List all projects IDs and names and lets the user select a specific
    * project by the project ID.
    */
@@ -153,8 +224,8 @@ public class ProjectsApp {
     Integer projectId = getIntInput("Enter a project ID to select a project");
     curProject = null;
     curProject = projectService.fetchProjectById(projectId);
-    
-    /*Not sure if this is required. TDB*/
+
+    /* Not sure if this is required. TDB */
     if (Objects.isNull(curProject)) {
       System.out.println("\nInvalid project ID selected.");
     }
